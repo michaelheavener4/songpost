@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SONGPOST</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#101116;color:#f2f3f7}body{margin:0;min-height:100vh;display:grid;place-items:center}main{width:min(760px,88vw);padding:3rem 0}h1{letter-spacing:.12em;font-size:clamp(2.5rem,8vw,5rem);margin:0}p{color:#aeb3c5;line-height:1.6}form{display:flex;gap:.75rem;margin:2rem 0}input,button{font:inherit;border-radius:10px;padding:1rem}input{flex:1;min-width:0;background:#1b1e28;border:1px solid #41465a;color:#fff}button{background:#c0a1ff;border:0;color:#171020;font-weight:700;cursor:pointer}button:disabled{opacity:.6;cursor:wait}input:focus-visible,button:focus-visible{outline:2px solid #d7c3ff;outline-offset:3px}#status{min-height:1.6em}#stats{font-size:.9rem}@media(max-width:600px){form{flex-direction:column}}
+</style>
+</head>
+<body><main>
+<h1>SONGPOST</h1>
+<p>A thought becomes a song. Give it somewhere to start.</p>
+<form id="generate"><input id="prompt" aria-label="Describe your song" placeholder="a haunted disco song about my ex's houseplant" maxlength="4000" required><button>Make my song</button></form>
+<p id="status" role="status" aria-live="polite"></p>
+<p id="stats" aria-live="polite">Loading song counts...</p>
+</main>
+<script>
+const form = document.querySelector('#generate');
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = form.querySelector('button');
+  const status = document.querySelector('#status');
+  button.disabled = true;
+  status.textContent = 'Composing your eight bars...';
+  try {
+    const response = await fetch('/api/generate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt:document.querySelector('#prompt').value})});
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Could not make your song.');
+    window.location.assign(result.url);
+  } catch (error) {status.textContent = error.message; button.disabled = false;}
+});
+async function refreshStats() {
+  try {
+    const response = await fetch('/api/stats', {cache:'no-store'});
+    if (!response.ok) throw new Error('Counts unavailable');
+    const s = await response.json();
+    document.querySelector('#stats').textContent = `${s.songs} songs made - ${s.plays} plays - ${s.feedback} feedback lines`;
+  } catch (_) {document.querySelector('#stats').textContent = 'Song counts are temporarily unavailable.';}
+}
+refreshStats();
+setInterval(refreshStats, 10000);
+</script>
+</body></html>
