@@ -2,8 +2,11 @@
 
 Type one line, get a finished song at its own link, send it to someone.
 
-Built for Stranger Builds I (Frontier Tower, Sat Oct 31, 2026). First commit
-after the event's opening gun: Fri Oct 30, 2026, 16:00 PT.
+SONGPOST is the shareable web surface for NOCTURNE, an authored
+deterministic music engine. SONGPOST is the front door and the share
+link; NOCTURNE is the engine behind the page. Integration plan:
+SONGPOST-NOCTURNE-INTEGRATION-2026-10-30.md in the Lab goal files.
+First built Fri Oct 30, 2026.
 
 ## What v0 does
 
@@ -20,18 +23,18 @@ after the event's opening gun: Fri Oct 30, 2026, 16:00 PT.
 
 Python 3 standard library only. No dependencies, no build step.
 
-- `engine.py` — the song engine. Deterministic and sample-free: the
+- `engine.py`: the song engine. Deterministic and sample-free: the
   prompt seeds a composition (key, mode, tempo, chord progression,
   melody walk, bass, synthesized drums), rendered to a 16-bit WAV with
   oscillators and envelopes. Same prompt, same song. Feedback starts
   from the parent song's parameters, applies plain-language changes,
   and folds the feedback text into the seed, so any note from a
   listener produces a genuinely different render.
-- `server.py` — a small HTTP server: generation API, song pages,
+- `server.py`: a small HTTP server: generation API, song pages,
   feedback API, play counting, and the derived stats endpoint.
   Songs live in `data/songs/<slug>/` as WAV versions plus a meta.json.
-- `index.html`, `song_template.html` — the two pages, inline CSS/JS.
-- `tests/test_pipeline.py` — stdlib unittest: real audio (valid WAV,
+- `index.html`, `song_template.html`: the two pages, inline CSS/JS.
+- `tests/test_pipeline.py`: stdlib unittest: real audio (valid WAV,
   audible, long enough), determinism, prompt sensitivity, feedback
   changing both params and audio, and counter-derivation checks.
 
@@ -42,13 +45,14 @@ python3 server.py            # http://localhost:8377
 python3 -m unittest discover -s tests
 ```
 
-## The engine hook (next slice)
+## The engine hook (the central integration slice)
 
 `engine.generate(prompt, feedback, parent)` is the whole contract.
-NOCTURNE, the music engine this product was designed around, slots in
-behind that one function: same signature, same return shape
-(wav bytes plus a params dict). Swapping it in changes nothing in the
-server, the pages, or the counter.
+NOCTURNE slots in behind that one function: same signature, same
+return shape (wav bytes plus a params dict). Swapping NOCTURNE in
+changes nothing in the server, the pages, or the counter. Feedback
+then runs through NOCTURNE's revision verbs (stateful revision, not
+regeneration), shared with the Ableton surface.
 
 ## Build notes
 
@@ -59,8 +63,9 @@ server, the pages, or the counter.
   the plan; that seat lives on a machine that was off tonight, so the
   wiring shipped inside the server slice instead.
 - Tests and counter checks: coordinator-written stand-ins for the
-  OpenCode seat, same reason. OpenCode re-runs them Saturday.
-- Deploy to songpost.heavener.co is parked: the Cloudflare CLI on this
-  machine is not authenticated, and wiring DNS needs that login.
-  Fix: `wrangler login` once, then deploy. Nothing about the app
-  changes when that happens.
+  OpenCode seat, same reason. OpenCode re-run is an open test item on
+  the integration queue, with no event deadline attached.
+- Deploy to songpost.heavener.co is a separate slice with no date:
+  the Cloudflare CLI on this machine is not authenticated, and wiring
+  DNS needs that login. Fix: `wrangler login` once, then deploy.
+  Nothing about the app changes when that happens.
